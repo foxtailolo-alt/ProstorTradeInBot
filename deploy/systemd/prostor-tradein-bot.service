@@ -1,0 +1,16 @@
+[Unit]
+Description=Prostor Trade-In Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/prostor-tradein-bot/app
+EnvironmentFile=/opt/prostor-tradein-bot/shared/.env
+ExecStart=/opt/prostor-tradein-bot/app/.venv/bin/python -m src.app.main
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
