@@ -14,7 +14,7 @@
 - Все расчеты строятся из snapshot.
 - Город не является пользовательским полем.
 - В pricing context всегда используется `moscow`.
-- Snapshot append-only по версиям: новый импорт создает новую версию, активируется только после проверки.
+- Snapshot append-only по версиям: новый импорт создает новую версию и в текущем MVP автоматически активирует ее, архивируя предыдущую active-версию.
 
 ## Сущности
 
@@ -85,7 +85,7 @@ Parser обязан:
 - нормализовать тексты и коды опций;
 - сохранять ветвления в `branching_rules_json`;
 - сохранять ценовые артефакты в `pricing_payload_json`;
-- не перезаписывать active snapshot напрямую;
+- не перезаписывать existing snapshot напрямую;
 - создавать новую snapshot version на каждый import run.
 
 ## Контракт wizard -> snapshot
@@ -101,8 +101,13 @@ Wizard обязан:
 Pricing engine обязан:
 - принимать `snapshot_version`, `category_code`, `device_model_code`, выбранные ответы;
 - работать только в московском контексте;
-- поддерживать минимум 3 режима: direct formula, table lookup, rule adjustments;
+- транслировать snapshot-ответы в payload скрытых buyout endpoints DamProdam;
 - возвращать итоговую цену и объяснимый trace для диагностики.
+
+Примечание MVP:
+- текущая реализация ходит в реальные hidden buyout endpoints DamProdam (`/py/*_buyout`);
+- snapshot хранит только нормализованные коды вопросов/опций и метаданные, нужные для построения buyout payload;
+- explainable trace отражает ответ DamProdam: итоговую сумму, диапазон сценария, бонус и штрафы, если они присутствуют.
 
 ## Контракт bot -> lead storage
 

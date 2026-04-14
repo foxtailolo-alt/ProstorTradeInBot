@@ -1,12 +1,17 @@
 from aiogram import Router
-from aiogram.filters import CommandStart
+from aiogram.filters import Command
 from aiogram.types import Message
 
 router = Router(name=__name__)
 
 
-@router.message(CommandStart())
-async def handle_start(message: Message) -> None:
+@router.message(Command("help"))
+async def handle_help(message: Message) -> None:
     await message.answer(
-        "Бот запускается. Сейчас готовится foundation для trade-in flow по Москве."
+        "Используйте /start, чтобы выбрать категорию, модель и получить оценку trade-in по Москве."
     )
+
+
+@router.message()
+async def handle_unknown(message: Message) -> None:
+    await message.answer("Используйте /start, чтобы начать новый расчет, или /help для подсказки.")

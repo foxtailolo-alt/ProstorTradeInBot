@@ -12,7 +12,7 @@ Telegram-бот для оценки trade-in техники по данным Da
 
 ## Текущий этап
 
-Foundation проекта плюс первый рабочий importer DamProdam API и draft snapshot refresh.
+Первый MVP: importer DamProdam API, auto-activated snapshot refresh, snapshot-driven Telegram wizard, live DamProdam pricing и lead capture.
 
 ## Быстрый старт
 
@@ -36,10 +36,11 @@ Foundation проекта плюс первый рабочий importer DamProda
 - Конфиг, запуск и базовый каркас aiogram-приложения.
 - PostgreSQL schema для snapshot, вопросов, опций и лидов.
 - Импорт 5 категорий из DamProdam API в нормализованный snapshot.
-- Создание draft snapshot через sync service для будущего cron/manual refresh.
+- Refresh через sync service создает новую версию snapshot и автоматически делает ее active.
+- Wizard в Telegram строится из active snapshot: категория -> модель -> вопросы -> quote.
+- После quote бот собирает контакт и сохраняет lead в PostgreSQL.
 
 ## Следующие шаги
 
-- Активировать snapshot и добавить политику версионирования/архивации.
-- Построить wizard из active snapshot.
-- Подключить реальный price request flow и сохранение лидов.
+- Добавить admin flow и scheduler для контролируемого refresh.
+- Усилить UX и branching parity для скрытых шагов DamProdam.

@@ -18,6 +18,7 @@ class StubSyncService:
 
 def test_admin_service_uses_moscow_pricing() -> None:
     settings = Settings(
+        _env_file=None,
         BOT_TOKEN="token",
         ADMIN_TELEGRAM_IDS="1,2",
         DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/test",
@@ -33,6 +34,7 @@ def test_admin_service_uses_moscow_pricing() -> None:
 
 async def test_admin_service_runs_manual_refresh() -> None:
     settings = Settings(
+        _env_file=None,
         BOT_TOKEN="token",
         ADMIN_TELEGRAM_IDS="1,2",
         DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/test",
@@ -42,6 +44,7 @@ async def test_admin_service_runs_manual_refresh() -> None:
         SyncRunResult(
             snapshot_id="snapshot-42",
             version=42,
+            status="active",
             category_count=5,
             imported_at=datetime(2026, 3, 31, tzinfo=UTC),
         )
@@ -52,4 +55,5 @@ async def test_admin_service_runs_manual_refresh() -> None:
 
     assert sync_service.call_count == 1
     assert result.snapshot_id == "snapshot-42"
+    assert result.status == "active"
     assert result.category_count == 5

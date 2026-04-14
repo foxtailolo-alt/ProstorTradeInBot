@@ -1,5 +1,4 @@
 from src.core.settings import Settings
-from src.core.settings import Settings
 from src.domain.contracts import AppHealth
 from src.sync.service import SyncRunResult, SyncService
 

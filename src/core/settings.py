@@ -1,8 +1,9 @@
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     bot_token: str = Field(alias="BOT_TOKEN")
-    admin_telegram_ids: tuple[int, ...] = Field(default=(), alias="ADMIN_TELEGRAM_IDS")
+    admin_telegram_ids: Annotated[tuple[int, ...], NoDecode] = Field(default=(), alias="ADMIN_TELEGRAM_IDS")
     database_url: str = Field(alias="DATABASE_URL")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     app_env: str = Field(default="dev", alias="APP_ENV")

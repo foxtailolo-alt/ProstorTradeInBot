@@ -20,6 +20,7 @@ class StubImporter:
 class StubPersistedSnapshot:
     id: str
     version: int
+    status: str
     imported_at: datetime
 
 
@@ -27,9 +28,14 @@ class StubPersistedSnapshot:
 class StubSnapshotRepository:
     persisted_snapshot: StubPersistedSnapshot
     saved_snapshot: SnapshotSchema | None = None
+    activated_snapshot_id: str | None = None
 
     async def create_draft_snapshot(self, snapshot_schema: SnapshotSchema) -> StubPersistedSnapshot:
         self.saved_snapshot = snapshot_schema
+        return self.persisted_snapshot
+
+    async def activate_snapshot(self, snapshot_id: str) -> StubPersistedSnapshot:
+        self.activated_snapshot_id = snapshot_id
         return self.persisted_snapshot
 
 
@@ -51,6 +57,7 @@ async def test_sync_service_persists_imported_snapshot() -> None:
     persisted_snapshot = StubPersistedSnapshot(
         id="snapshot-1",
         version=4,
+        status="active",
         imported_at=datetime(2026, 4, 1, tzinfo=UTC),
     )
     repository = StubSnapshotRepository(persisted_snapshot)
@@ -59,7 +66,9 @@ async def test_sync_service_persists_imported_snapshot() -> None:
     result = await service.run_weekly_refresh()
 
     assert repository.saved_snapshot == snapshot
+    assert repository.activated_snapshot_id == "snapshot-1"
     assert result.snapshot_id == "snapshot-1"
     assert result.version == 4
+    assert result.status == "active"
     assert result.category_count == 1
     assert result.imported_at == persisted_snapshot.imported_at

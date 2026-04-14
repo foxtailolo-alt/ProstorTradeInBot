@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import selectinload
 
-from src.domain.snapshot_schema import SnapshotSchema
 from src.domain.enums import SnapshotStatus
-from src.storage.models.snapshot import DeviceModel, Question, QuestionOption, Snapshot, SnapshotCategory
+from src.domain.snapshot_schema import SnapshotSchema
+from src.storage.models.snapshot import (
+    DeviceModel,
+    Question,
+    QuestionOption,
+    Snapshot,
+    SnapshotCategory,
+)
 
 
 class SnapshotRepository:
@@ -79,12 +85,44 @@ class SnapshotRepository:
             result = await session.execute(
                 select(Snapshot)
                 .where(Snapshot.status == SnapshotStatus.ACTIVE.value)
-                .options(
-                    selectinload(Snapshot.categories).selectinload(SnapshotCategory.device_models),
-                    selectinload(Snapshot.categories).selectinload(SnapshotCategory.questions),
-                )
+                .options(*self._snapshot_graph_options())
             )
             return result.scalar_one_or_none()
+
+    async def get_snapshot_by_version(self, version: int) -> Snapshot | None:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(Snapshot)
+                .where(Snapshot.version == version)
+                .options(*self._snapshot_graph_options())
+            )
+            return result.scalar_one_or_none()
+
+    async def activate_snapshot(self, snapshot_id: str) -> Snapshot:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(Snapshot)
+                .where(Snapshot.id == snapshot_id)
+                .options(*self._snapshot_graph_options())
+            )
+            snapshot = result.scalar_one_or_none()
+            if snapshot is None:
+                raise ValueError(f"Snapshot '{snapshot_id}' does not exist.")
+
+            if snapshot.status != SnapshotStatus.ACTIVE.value:
+                await session.execute(
+                    update(Snapshot)
+                    .where(
+                        Snapshot.status == SnapshotStatus.ACTIVE.value,
+                        Snapshot.id != snapshot.id,
+                    )
+                    .values(status=SnapshotStatus.ARCHIVED.value)
+                )
+                snapshot.status = SnapshotStatus.ACTIVE.value
+                await session.commit()
+
+            await session.refresh(snapshot)
+            return snapshot
 
     async def list_snapshots(self) -> Sequence[Snapshot]:
         async with self._session_factory() as session:
@@ -92,6 +130,17 @@ class SnapshotRepository:
             return result.scalars().all()
 
     async def _get_next_version(self, session: AsyncSession) -> int:
-        result = await session.execute(select(Snapshot.version).order_by(Snapshot.version.desc()).limit(1))
+        result = await session.execute(
+            select(Snapshot.version).order_by(Snapshot.version.desc()).limit(1)
+        )
         current_version = result.scalar_one_or_none()
         return 1 if current_version is None else current_version + 1
+
+    @staticmethod
+    def _snapshot_graph_options() -> tuple:
+        return (
+            selectinload(Snapshot.categories).selectinload(SnapshotCategory.device_models),
+            selectinload(Snapshot.categories)
+            .selectinload(SnapshotCategory.questions)
+            .selectinload(Question.options),
+        )
